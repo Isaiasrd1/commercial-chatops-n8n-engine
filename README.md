@@ -95,11 +95,11 @@ graph TD
 Para garantir rastreabilidade total e integridade, a Janda utiliza três datatables principais com o `slack_item_id` como elo central:
 
 ### 1. Snapshot (Estado Atual)
-Esta tabela apresenta a situação consolidada de cada negociação comercial, servindo como a referência principal para consultar o status atual de contratos, obras e documentações em tempo real.
+Esta tabela apresenta a situação consolidada de cada negociação comercial, servindo como a referência principal para consultar o status atual de documentações, acesso ao intranet, contratos e obras em tempo real.
 
-* **Identificadores:** `slack_item_id` (Chave Primária/Âncora), `id` (padrão do n8n), `suc`.
+* **Identificadores:** `slack_item_id` (chave primária), `id` (padrão do n8n), `suc`.
 * **Atributos de Operação:** `marca`, `tipo_operacao`, `suc`, `localizacao`, `executivo`, `observacao`, `quem_editou`, `data_edicao`, `data_criacao`.
-* **Status Monitorados:** `status_contrato`, `status_projeto`, `intranetmall`, `documentacao`.
+* **Status Monitorados:** `documentacao`, `intranetmall`, `status_contrato`, `status_projeto`.
 * **Datas de Vigência:** `inicio_vig`, `inauguracao_contratual`, `inauguracao_prevista`.
 * **SLA Engine (Timestamps de Eventos):**
     * **Documentação:** `dt_doc_pendente`, `dt_doc_incompleto`, `dt_doc_recebida`.
@@ -109,7 +109,7 @@ Esta tabela apresenta a situação consolidada de cada negociação comercial, s
 * **Metadados Padrões de Sistema (_n8n_):** `data_criacao`, `createdAt`, `updatedAt`.
 
 ### 2. Log Diário & Log Histórico (Eventos e Transições)
-Ambos tegistram a jornada do dado e as mudanças de estado. O `log_diario` foca em eventos recentes para relatórios rápidos, enquanto o `log_histórico` mantém a trilha completa para auditoria ou análises futuras.
+Ambos registram a jornada do dado e as mudanças de estado. O `log_diario` foca em eventos recentes para relatórios rápidos, enquanto o `log_histórico` mantém a trilha completa para auditoria ou análises futuras.
 
 * **Identificadores e Contexto:** `id`, `slack_item_id`, `marca`, `tipo_operacao`.
 * **Auditoria de Alteração:** `campo` (identifica qual dado mudou), `de` (valor anterior), `para` (novo valor), `quem` (autor da modificação), `data_hora` (quando a mudança foi feita).
