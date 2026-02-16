@@ -33,7 +33,15 @@ A solução foi implantada para unificar o fluxo de dados entre as equipes de Ve
 
 ## Arquitetura Técnica
 
-O sistema utiliza uma arquitetura de **Microsserviços via Workflows**, onde cada fluxo no _n8n_ tem uma responsabilidade única e isolada (Single Responsibility Principle).
+O sistema utiliza uma arquitetura de **Microsserviços via Workflows**, onde cada fluxo no _n8n_ tem uma responsabilidade única (Single Responsibility Principle), sendo elas:
+
+* **00 - Gateway Service:** Atua como o ponto central de entrada (Entrypoint). Ele recebe os webhooks do Slack, realiza a filtragem de segurança e roteia as requisições para os serviços específicos com base na intenção do usuário ou no tipo de evento;
+
+* **01 - Core Pipeline:** Responsável pelo processamento e persistência. Ele faz o parsing dos dados brutos, aplica a lógica de imutabilidade de timestamps e gerencia os banco de dados (Upsert), garantindo que cada evento seja registrado com integridade;
+
+* **02 - Daily Reporting:** Um serviço agendado (schedule node) que verifica a base de dados, processa a calculadora de SLA e gera o "Resumo diário" e, caso necessário, o "Farol de Pendências" com arquivo excel. Ele decide, de forma autônoma, qual nível de detalhamento deve ser postado no canal;
+
+* **03 - Interactive Bot:** Gerencia a interface conversacional (UX/UI). Processa a busca híbrida (Regex/Fuzzy), constrói os blocos visuais do Slack (Block Kit) e lida com a geração de arquivos Excel para exportação imediata.
 
 ### Diagrama de Fluxo
 
@@ -44,18 +52,18 @@ graph TD
     SlackAPI -->|Webhook Event| Gateway{Gateway Router}
 
     %% Gateway: O Porteiro
-    subgraph "00 - Gateway Service"
+    subgraph "Gateway | Slack Event Router"
         Gateway -->|Channel Filter| Security[Security Filter]
         Security -->|Route: @Janda| TriggerBot[Chamar Interactive Bot]
         Security -->|Route: Log de Status| TriggerCore[Chamar Core Pipeline]
     end
 
     %% Bot Interativo: O Atendente
-    subgraph "03 - Interactive Bot"
+    subgraph "Interactive Bot | Janda"
         TriggerBot --> Matcher[🔍 Matcher Engine]
         Matcher -->|Regex & Fuzzy Search| DB_Read[(Database Snapshot)]
         Matcher --> SwitchIntent{Identificar Intenção}
-        SwitchIntent -->|Query Específica| BuildDetail[Block Builder: Detalhe]
+        SwitchIntent -->|Query Específica| BuildDetail[Block Builder: 'Raio-x' da operação]
         SwitchIntent -->|Relatório Geral| BuildReport[Excel Generator]
         SwitchIntent -->|Erro/Ajuda| BuildError[Error Handler]
         BuildDetail & BuildError --> ReplyThread[💬 Responder na Thread]
@@ -63,7 +71,7 @@ graph TD
     end
 
     %% Core Pipeline: O Processador
-    subgraph "01 - Core Pipeline"
+    subgraph "Core Pipeline | Status Ingestion & Logging"
         TriggerCore --> Parser[JSON Parser]
         Parser --> TimestampEngine[⏱️ Timestamp Manager]
         TimestampEngine -->|Lógica First Touch| DB_Write[(Database Upsert)]
@@ -71,7 +79,7 @@ graph TD
     end
 
     %% Reporting: O Auditor
-    subgraph "02 - Daily Reporting"
+    subgraph "Reporting | Daily Operations Digest"
         Schedule(🕒 Cron Trigger) --> FilterActive[Filtrar Ativos]
         FilterActive --> SLACalc[📉 Calculadora de SLA]
         SLACalc --> FarolLogic{Tem Pendência?}
@@ -81,6 +89,49 @@ graph TD
     end
 
 ```
+
+## Estrutura de Dados (Data Schema)
+
+Para garantir rastreabilidade total e integridade, a Janda utiliza três datatables principais com o `slack_item_id` como elo central:
+
+### 1. Snapshot (Estado Atual)
+Esta tabela apresenta a situação consolidada de cada negociação comercial, servindo como a referência principal para consultar o status atual de contratos, obras e documentações em tempo real.
+
+* **Identificadores:** `slack_item_id` (Chave Primária/Âncora), `id` (padrão do n8n), `suc`.
+* **Atributos de Operação:** `marca`, `tipo_operacao`, `suc`, `localizacao`, `executivo`, `observacao`, `quem_editou`, `data_edicao`, `data_criacao`.
+* **Status Monitorados:** `status_contrato`, `status_projeto`, `intranetmall`, `documentacao`.
+* **Datas de Vigência:** `inicio_vig`, `inauguracao_contratual`, `inauguracao_prevista`.
+* **SLA Engine (Timestamps de Eventos):**
+    * **Documentação:** `dt_doc_pendente`, `dt_doc_incompleto`, `dt_doc_recebida`.
+    * **Sistemas:** `dt_intranet_solicitado`, `dt_intranet_enviado_lojista`.
+    * **Jurídico:** `dt_contrato_confeccao`, `dt_contrato_enviado`, `dt_contrato_assinatura`, `dt_contrato_assinado`.
+    * **Projetos:** `dt_projeto_pendente`, `dt_projeto_em_aprovacao`, `dt_projeto_aprovado`.
+* **Metadados Padrões de Sistema (_n8n_):** `data_criacao`, `createdAt`, `updatedAt`.
+
+### 2. Log Diário & Log Histórico (Eventos e Transições)
+Ambos tegistram a jornada do dado e as mudanças de estado. O `log_diario` foca em eventos recentes para relatórios rápidos, enquanto o `log_histórico` mantém a trilha completa para auditoria ou análises futuras.
+
+* **Identificadores e Contexto:** `id`, `slack_item_id`, `marca`, `tipo_operacao`.
+* **Auditoria de Alteração:** `campo` (identifica qual dado mudou), `de` (valor anterior), `para` (novo valor), `quem` (autor da modificação), `data_hora` (quando a mudança foi feita).
+* **Métricas de Performance:** `dias_na_etapa_anterior` (calculado em tempo real para medir o Lead Time).
+* **Metadados Padrões de Sistema (_n8n_):** `data_criacao`, `createdAt`, `updatedAt`.
+
+---
+
+## Garantia de Unicidade via slack_item_id
+
+A Janda utiliza o `slack_item_id` como chave primária. 
+
+### Por que essa abordagem?
+O setor comercial frequentemente negocia diferentes tipos de operação para uma mesma marca (ex: mídia offline e loja física) ou possui recorrência de eventos sazonais (como parques, feiras e stands) de um mesmo parceiro (ex: Natura - Dia das Mães, Natura - Tododia).
+
+Para garantir que cada negociação seja tratada de forma individual e evitar que edições no Slack gerem dados redundantes ou resetem o histórico de determinada operação, o sistema utiliza o `slack_item_id` como chave de identificação principal.
+
+* **Diferenciação por Instância:** Ao usar o ID da mensagem como âncora, o sistema permite que coexistam múltiplos contratos de uma mesma marca sem conflito de dados ou sobreposição de datas;
+
+* **Sincronização de Edições:** Quando um executivo edita uma mensagem na lista do Slack, o sistema identifica o ID correspondente e realiza um Upsert, mantendo a integridade daquela negociação específica em vez de criar um novo registro;
+
+* **Integridade de Histórico:** O ID único atua como o elo entre o `snapshot` e `log`, permitindo que o histórico completo de uma negociação específica seja reconstruído.
 
 ---
 
@@ -149,4 +200,4 @@ Integração direta dos dados estruturados do n8n com ferramentas de Business In
 
 ## Conclusão
 
-O Projeto Janda vai além de uma automação isolada; se trata da transição do Comercial para uma gestão orientada por dados (Data-Driven). A tecnologia assume o papel operacional rígido para que a equipe foque no que é insubstituível: a estratégia, a negociação e o relacionamento.
+O projeto Janda vai além de uma automação isolada, se trata da transição do Comercial para uma gestão orientada por dados (Data-Driven). A tecnologia assume o papel operacional rígido para que a equipe foque no que é insubstituível: a estratégia, a negociação e o relacionamento.
