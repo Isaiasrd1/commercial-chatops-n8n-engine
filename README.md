@@ -1,17 +1,20 @@
 # Janda: Commercial Operations Orchestrator & SLA Engine
 
+![en](https://img.shields.io/badge/Language-PT-red.svg)
 ![Status](https://img.shields.io/badge/Status-Production-success)
 ![Stack](https://img.shields.io/badge/Stack-n8n_|_Javascript_|_Slack_Block_Kit-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-Event--Driven-orange)
 ![Type](https://img.shields.io/badge/Type-ChatOps_Agent-purple)
 
-> **Nota:** Este repositório contém a lógica arquitetural, os fluxos de orquestração e snippets de código do projeto "Janda". Credenciais corporativas, Webhooks e dados sensíveis (PII) foram ofuscados.
+> **Nota:** Este repositório contém a lógica arquitetural e os fluxos de orquestração do projeto "Janda".
+
+[🇺🇸 You can read this in English](./README.en.md)
 
 ---
 
 ## Sobre o Projeto
 
-A **Janda** é uma agente de **ChatOps Determinístico** desenvolvida para orquestrar o fluxo de informações do departamento comercial de um Shopping Center de grande porte (+90k m² ABL).
+A **Janda** é uma agente de **ChatOps Determinístico** desenvolvida para orquestrar o fluxo de informações do setor comercial de um Shopping Center de grande porte (+90k m² ABL).
 
 Diferente de assistentes baseados em IA Generativa, a Janda atua como uma **Máquina de Estados (State Machine)** rígida. Ela monitora o ciclo de vida de contratos, obras, acesso a sistema interno e documentação de locatários, garantindo auditoria de datas, cálculo preciso de SLAs e recuperação instantânea de dados via _Slack_.
 
@@ -90,6 +93,8 @@ graph TD
 
 ```
 
+---
+
 ## Estrutura de Dados (Data Schema)
 
 Para garantir rastreabilidade total e integridade, a Janda utiliza três datatables principais com o `slack_item_id` como elo central:
@@ -97,24 +102,24 @@ Para garantir rastreabilidade total e integridade, a Janda utiliza três datatab
 ### 1. Snapshot (Estado Atual)
 Esta tabela apresenta a situação consolidada de cada negociação comercial, servindo como a referência principal para consultar o status atual de documentações, acesso ao intranet, contratos e obras em tempo real.
 
-* **Identificadores:** `slack_item_id` (chave primária), `id` (padrão do n8n), `suc`.
+* **Identificadores:** `slack_item_id` (chave primária), `businesskey`.
 * **Atributos de Operação:** `marca`, `tipo_operacao`, `suc`, `localizacao`, `executivo`, `observacao`, `quem_editou`, `data_edicao`, `data_criacao`.
 * **Status Monitorados:** `documentacao`, `intranetmall`, `status_contrato`, `status_projeto`.
 * **Datas de Vigência:** `inicio_vig`, `inauguracao_contratual`, `inauguracao_prevista`.
 * **SLA Engine (Timestamps de Eventos):**
     * **Documentação:** `dt_doc_pendente`, `dt_doc_incompleto`, `dt_doc_recebida`.
-    * **Sistemas:** `dt_intranet_solicitado`, `dt_intranet_enviado_lojista`.
-    * **Jurídico:** `dt_contrato_confeccao`, `dt_contrato_enviado`, `dt_contrato_assinatura`, `dt_contrato_assinado`.
-    * **Projetos:** `dt_projeto_pendente`, `dt_projeto_em_aprovacao`, `dt_projeto_aprovado`.
-* **Metadados Padrões de Sistema (_n8n_):** `data_criacao`, `createdAt`, `updatedAt`.
+    * **Sistema:** `dt_intranet_solicitado`, `dt_intranet_enviado_lojista`.
+    * **Contrato:** `dt_contrato_confeccao`, `dt_contrato_enviado`, `dt_contrato_assinatura`, `dt_contrato_assinado`.
+    * **Projeto:** `dt_projeto_pendente`, `dt_projeto_em_aprovacao`, `dt_projeto_aprovado`.
+* **Metadados Padrões de Sistema (_n8n_):** `id`, `data_criacao`, `createdAt`, `updatedAt`.
 
 ### 2. Log Diário & Log Histórico (Eventos e Transições)
 Ambos registram a jornada do dado e as mudanças de estado. O `log_diario` foca em eventos recentes para relatórios rápidos, enquanto o `log_histórico` mantém a trilha completa para auditoria ou análises futuras.
 
-* **Identificadores e Contexto:** `id`, `slack_item_id`, `marca`, `tipo_operacao`.
+* **Identificadores e Contexto:** `slack_item_id`, `marca`, `tipo_operacao`, `data_criacao` (quando o item foi criado na _lista do Slack_).
 * **Auditoria de Alteração:** `campo` (identifica qual dado mudou), `de` (valor anterior), `para` (novo valor), `quem` (autor da modificação), `data_hora` (quando a mudança foi feita).
 * **Métricas de Performance:** `dias_na_etapa_anterior` (calculado em tempo real para medir o Lead Time).
-* **Metadados Padrões de Sistema (_n8n_):** `data_criacao`, `createdAt`, `updatedAt`.
+* **Metadados Padrões de Sistema (_n8n_):** `id`, `createdAt`, `updatedAt`.
 
 ---
 
@@ -151,10 +156,10 @@ Para lidar com erros de digitação humanos, o bot utiliza um motor de busca hí
 
 **3. Threaded Reporting UX**
 
-Para evitar poluição visual no canal (Flood), todos os relatórios complexos (Farol de Pendências) utilizam o recurso de responder em Threads do _Slack_.
+Para evitar poluição visual no canal (Flood), todos os relatórios complexos (Resumo Diário e Farol de Pendências) utilizam o recurso de responder em Threads do _Slack_.
 
 * **Mensagem Pai:** Cabeçalho com Data e Contexto;
-* **Thread 1:** Resumo de novas operações adicionadas na lista do _Slack_ e contatos assinados no dia anterior;
+* **Thread 1:** Resumo de novas operações adicionadas na lista do _Slack_ e contratos assinados no dia anterior;
 * **Thread 2:** Farol de Pendências (apenas se houver atrasos);
 * **Thread 3:** Arquivo Excel detalhado do Farol de Pendências.
 
@@ -174,11 +179,11 @@ Para evitar poluição visual no canal (Flood), todos os relatórios complexos (
 
 > * **RegEx & String Normalization:** Para o motor de busca híbrido e limpeza de inputs do Slack;
 > * **JSON Object Parsing:** Tratamento de payloads complexos e estruturas de blocos da API do Slack;
-> * **Advanced Date Logic:** Algoritmos para cálculo de SLA em dias corridos, manipulação de Timezones (UTC para PT-BR) e validação de cronogramas.
+> * **Date Logic:** Algoritmos para cálculo de SLA em dias corridos, manipulação de Timezones (UTC para PT-BR) e validação de cronogramas.
 
 ---
 
-## Data Persistence & Portability
+## Data Persistence
 
 A escolha dos _n8n Data Tables_ como repositório inicial foi estratégica, priorizando a baixa latência de escrita e a agilidade no ciclo de desenvolvimento (MVP).
 
@@ -191,7 +196,7 @@ A escolha dos _n8n Data Tables_ como repositório inicial foi estratégica, prio
 ## Roadmap de Evolução Estratégica
 
 **Fase 1:** Consolidação e Feedback (Curto Prazo)
-Foco na homologação total (Comercial SCIB/Comercial Corporativo/TD) dos fluxos de notificações e aculturamento do time comercial SCIB. O objetivo é garantir que os resumos em horários pré-definidos sejam a fonte de consulta para a gestão e um guia de prioridades diárias do time.
+Foco na homologação total (Comercial SCIB/TD/Comercial Corporativo) dos fluxos de notificações e aculturamento do time comercial SCIB. O objetivo é garantir que os resumos em horários pré-definidos sejam a fonte de consulta para a gestão e um guia de prioridades diárias do time.
 
 Fase 2: Escalabilidade (Médio-Longo Prazo)
 Integração direta dos dados estruturados do n8n com ferramentas de Business Intelligence (BI) para dashboards executivos.
