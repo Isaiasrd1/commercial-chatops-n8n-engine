@@ -180,6 +180,16 @@ To avoid visual pollution in the channel (Flood), all complex reports (Daily Upd
 
 ---
 
+## AI Governance
+
+This project utilized **AI-Assisted Development** practices to reduce coding time and increase logical test coverage.
+
+**Tool:** Gemini 3.0 Pro.
+
+**Security Protocol:** No sensitive business rules, credentials, or personal data (PII) were submitted to the model. AI usage was strictly limited to generating JavaScript syntax snippets and JSON formatting, ensuring compliance with corporate data policies.
+
+---
+
 ## Data Persistence
 
 The choice of _n8n Data Tables_ as the initial repository was strategic, prioritizing low write latency and agility in the development cycle (MVP).
