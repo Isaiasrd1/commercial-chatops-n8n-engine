@@ -183,6 +183,16 @@ Para evitar poluição visual no canal (Flood), todos os relatórios complexos (
 
 ---
 
+## Governança de IA
+
+Este projeto utilizou práticas de AI-Assisted Development para reduzir o tempo de codificação e aumentar a cobertura de testes lógicos.
+
+**Ferramenta:** Gemini 3.0 Pro.
+
+**Protocolo de Segurança:** Nenhuma regra de negócio sensível, credencial ou dado pessoal (PII) foi submetido ao modelo. A IA atuou estritamente na geração de snippets de sintaxe JavaScript e formatação de JSON, garantindo a conformidade com as políticas de dados da empresa.
+
+---
+
 ## Data Persistence
 
 A escolha dos _n8n Data Tables_ como repositório inicial foi estratégica, priorizando a baixa latência de escrita e a agilidade no ciclo de desenvolvimento (MVP).
