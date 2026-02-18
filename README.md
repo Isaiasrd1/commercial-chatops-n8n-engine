@@ -8,7 +8,7 @@
 
 > **Nota:** Este repositório contém a lógica arquitetural e os fluxos de orquestração do projeto "Janda".
 
-[🇺🇸 You can read this in English](./README.en.md)
+[You can read this in English](./README.en.md)
 
 ---
 
