@@ -28,7 +28,6 @@ A solução foi implantada para unificar o fluxo de dados entre as equipes de Ve
 
 **Key Performance Indicators (KPIs):**
 * **Padronização & Rotina:** Mensagens padronizadas e implementação de horários para enviar os updates e relatórios, diminuindo a média de notificações anterior de ~3 para 1 por dia;
-* **Redução de Latência:** Otimização de **1.260 horas anuais** da equipe comercial (Foco Estratégico), considerando estudos que indicam que o cérebro humano leva em torno de 25 min. pra recuperar a concentração após uma interrupção (Context Switching);
 * **Auditoria de SLA:** Implementação de rastreabilidade de prazos baseada em eventos (ex: abertura de protocolo de confecção de contrato), permitindo identificar gargalos no funil de locação;
 * **User Experience:** Adoção imediata pela equipe devido à interface via _Slack_ (Zero-Learning Curve), eliminando a necessidade de treinamento em novos ERPs.
 
