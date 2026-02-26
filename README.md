@@ -143,7 +143,7 @@ Para garantir que cada negociação seja tratada de forma individual e evitar qu
 
 **1. Timestamp Immutability (First Touch Logic)**
 
-Para garantir a integridade dos SLAs, o sistema ignora eventos duplicados e sela a data do "Primeiro Toque". Isso impede que reedições de mensagens no _Slack_ alterem o histórico de auditoria, garantindo um log de eventos append-only.
+Para garantir a integridade dos SLAs, o sistema ignora eventos duplicados e sela a data do "Primeiro Toque". Isso impede que reedições no _Slack_ alterem o histórico de auditoria, garantindo um log de eventos append-only.
 
 **2. Hybrid Matcher Engine**
 
