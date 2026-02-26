@@ -28,7 +28,6 @@ The solution was deployed to unify the data flow between the Sales (Field) and O
 
 **Key Performance Indicators (KPIs):**
 * **Standardization & Routine:** Standardized messages and implementation of schedules for sending updates and reports, decreasing the previous notification average from ~3 to 1 per day;
-* **Latency Reduction:** Optimization of **1,260 annual hours** for the commercial team (Strategic Focus), considering studies indicating that the human brain takes around 25 minutes to recover concentration after an interruption (Context Switching);
 * **SLA Auditing:** Implementation of event-based deadline traceability, allowing for the identification of bottlenecks in the leasing funnel;
 * **User Experience:** Immediate adoption by the team due to the _Slack_ interface (Zero-Learning Curve), eliminating the need for training in new ERPs.
 
