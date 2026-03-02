@@ -27,7 +27,7 @@ O sistema atua como *Middleware*, conectando a entrada de dados não estruturada
 A solução foi implantada para unificar o fluxo de dados entre as equipes de Vendas (Campo) e Operacional (Back-office). Antes da Janda, o acompanhamento era realizado de forma fragmentada; a automação centralizou essas informações, estabelecendo uma camada de visibilidade compartilhada e padronização no ciclo de vida das operações.
 
 **Key Performance Indicators (KPIs):**
-* **Padronização & Rotina:** Mensagens padronizadas e implementação de horários para enviar os updates e relatórios, diminuindo a média de notificações anterior de ~3 para 1 por dia;
+* **Padronização & Rotina:** Mensagens padronizadas e implementação de horários para enviar os updates e relatórios;
 * **Auditoria de SLA:** Implementação de rastreabilidade de prazos baseada em eventos (ex: abertura de protocolo de confecção de contrato), permitindo identificar gargalos no funil de locação;
 * **User Experience:** Adoção imediata pela equipe devido à interface via _Slack_ (Zero-Learning Curve), eliminando a necessidade de treinamento em novos ERPs.
 
